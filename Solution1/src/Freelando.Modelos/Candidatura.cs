@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Freelando.Modelo;
+﻿namespace Freelando.Modelo;
 
 public class Candidatura
 {
@@ -12,4 +7,18 @@ public class Candidatura
     public string? DescricaoProposta { get; set; }
     public DuracaoEmDias DuracaoProposta { get; set; }
     public StatusCandidatura Status { get; set; }
+
+    public Candidatura()
+    {
+
+    }
+
+    public Candidatura(Guid id, double valorProposto, string? descricaoProposta, DuracaoEmDias duracaoProposta, StatusCandidatura status)
+    {
+        Id = id;
+        ValorProposto = valorProposto;
+        DescricaoProposta = descricaoProposta;
+        DuracaoProposta = duracaoProposta;
+        Status = status;
+    }
 }

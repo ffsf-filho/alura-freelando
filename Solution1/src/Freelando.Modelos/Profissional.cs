@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Freelando.Modelo;
 
-namespace Freelando.Modelo;
 public class Profissional
 {
     public Guid Id { get; set; }
@@ -13,4 +8,17 @@ public class Profissional
     public string? Email { get; set; }
     public string? Telefone { get; set; }
 
+    public Profissional()
+    {
+        
+    }
+
+    public Profissional(Guid id, string? nome, string? cpf, string? email, string? telefone)
+    {
+        Id = id;
+        Nome = nome;
+        Cpf = cpf;
+        Email = email;
+        Telefone = telefone;
+    }
 }

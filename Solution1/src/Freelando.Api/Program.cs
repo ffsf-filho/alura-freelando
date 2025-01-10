@@ -1,3 +1,4 @@
+using Freelando.Api.Converters;
 using Freelando.Api.Endpoints;
 using Freelando.Dados;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,15 @@ builder.Services.AddDbContext<FreelandoContext>((options) =>
     options.UseSqlServer(builder.Configuration["ConnectionStrings:DefaultConnection"]);
 });
 
+builder.Services.AddTransient<FreelandoContext>();
+builder.Services.AddTransient(typeof(CandidaturaConverter));
+builder.Services.AddTransient(typeof(ClienteConverter));
+builder.Services.AddTransient(typeof(ContratoConverter));
+builder.Services.AddTransient(typeof(EspecialidadeConverter));
+builder.Services.AddTransient(typeof(ProfissionalConverter));
+builder.Services.AddTransient(typeof(ProjetoConverter));
+builder.Services.AddTransient(typeof(ServicoConverter));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -22,7 +32,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+//Endpoints
+app.AddEndPointCandidatura();
+app.AddEndPointClientes();
+app.AddEndPointContrato();
+app.AddEndPointProfissional();
 app.AddEndPointEspecialidades();
+app.AddEndPointProjeto();
+app.AddEndPointServico();
+
 app.UseHttpsRedirection();
 
 app.Run();

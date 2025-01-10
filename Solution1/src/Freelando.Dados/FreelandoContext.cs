@@ -4,12 +4,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace Freelando.Dados;
 
-public class FreelandoContext : DbContext
+public class FreelandoContext(IConfiguration configuration, DbContextOptions<FreelandoContext> options) : DbContext(options)
 {
-    private readonly IConfiguration _configuration;
-    public FreelandoContext(DbContextOptions<FreelandoContext> options) : base(options)
-    {
-    }
+    private readonly IConfiguration _configuration = configuration;
 
     override protected void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -17,6 +14,11 @@ public class FreelandoContext : DbContext
         {
             optionsBuilder.UseSqlServer(_configuration.GetConnectionString("ConnectionStrings:DefaultConnection"));
         }
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(FreelandoContext).Assembly);
     }
 
     public DbSet<Candidatura> Candidaturas { get; set; }

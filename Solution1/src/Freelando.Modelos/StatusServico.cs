@@ -1,4 +1,5 @@
 ﻿namespace Freelando.Modelo;
+
 public enum StatusServico
 {
     Disponivel,
