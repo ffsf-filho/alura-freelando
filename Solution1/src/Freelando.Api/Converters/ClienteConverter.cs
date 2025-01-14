@@ -6,6 +6,8 @@ namespace Freelando.Api.Converters;
 
 public class ClienteConverter
 {
+    private ProjetoConverter? _projetosConverter;
+
     public ClienteResponse EntityToResponse(Cliente? cliente)
     {
         if (cliente == null)
@@ -17,8 +19,8 @@ public class ClienteConverter
 
     public Cliente RequestToEntity(ClienteRequest? cliente)
     {
-        if (cliente == null) { return new Cliente(Guid.Empty, "", "", "", ""); }
-        return new Cliente(cliente.Id, cliente.Nome!, cliente.Cpf!, cliente.Email!, cliente.Telefone!);
+        if (cliente == null) { return new Cliente(Guid.Empty, "", "", "", "", new List<Projeto>()); }
+        return new Cliente(cliente.Id, cliente.Nome!, cliente.Cpf!, cliente.Email!, cliente.Telefone!, _projetosConverter!.RequestListToEntityList(cliente.Projetos!));
     }
 
     public ICollection<ClienteResponse>? EntityListToResponseList(IEnumerable<Cliente>? clientes)
