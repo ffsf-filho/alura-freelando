@@ -43,5 +43,20 @@ public static class ContratoExtension
 
             return Results.Ok((contrato));
         }).WithTags("Contrato").WithOpenApi();
+
+        app.MapDelete("/contrato/{id}", async ([FromServices] ContratoConverter converter, [FromServices] FreelandoContext contexto, Guid id) =>
+        {
+            var contrato = await contexto.Contratos.FindAsync(id);
+
+            if (contrato is null)
+            {
+                return Results.NotFound();
+            }
+
+            contexto.Contratos.Remove(contrato);
+            await contexto.SaveChangesAsync();
+
+            return Results.NoContent();
+        }).WithTags("Contrato").WithOpenApi();
     }
 }
