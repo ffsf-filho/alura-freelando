@@ -39,6 +39,7 @@ app.AddEndPointContrato();
 app.AddEndPointProfissional();
 app.AddEndPointEspecialidades();
 app.AddEndPointProjeto();
+app.AddEndPointRelatorios();
 app.AddEndPointServico();
 
 app.UseHttpsRedirection();
