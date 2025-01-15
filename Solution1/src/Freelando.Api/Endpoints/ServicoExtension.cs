@@ -23,5 +23,24 @@ public static class ServicoExtensions
 
             return Results.Created($"/servico/{servico.Id}", servico);
         }).WithTags("Servicos").WithOpenApi();
+
+        app.MapPut("/servico/{id}", async ([FromServices] ServicoConverter converter, [FromServices] FreelandoContext contexto, Guid id, ServicoRequest servicoRequest) =>
+        {
+            var servico = await contexto.Servicos.FindAsync(id);
+
+            if (servico is null)
+            {
+                return Results.NotFound();
+            }
+            
+            var servicoAtualizado = converter.RequestToEntity(servicoRequest);
+            servico.Titulo = servicoAtualizado.Titulo;
+            servico.Descricao = servicoAtualizado.Descricao;
+            servico.Status = servicoAtualizado.Status;
+
+            await contexto.SaveChangesAsync();
+
+            return Results.Ok((servico));
+        }).WithTags("Servicos").WithOpenApi();
     }
 }

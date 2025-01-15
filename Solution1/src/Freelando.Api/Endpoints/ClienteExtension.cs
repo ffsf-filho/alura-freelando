@@ -25,5 +25,25 @@ public static class ClienteExtension
 
             return Results.Created($"/cliente/{cliente.Id}", cliente);
         }).WithTags("Cliente").WithOpenApi();
+
+        app.MapPut("/cliente/{id}", async ([FromServices] ClienteConverter converter, [FromServices] FreelandoContext contexto, Guid id, ClienteRequest clienteRequest) =>
+        {
+            var cliente = await contexto.Clientes.FindAsync(id);
+
+            if (cliente is null)
+            {
+                return Results.NotFound();
+            }
+
+            var clienteAtualizado = converter.RequestToEntity(clienteRequest);
+            cliente.Nome = clienteAtualizado.Nome;
+            cliente.Cpf = clienteAtualizado.Cpf;
+            cliente.Email = clienteAtualizado.Email;
+            cliente.Telefone = clienteAtualizado.Telefone;
+
+            await contexto.SaveChangesAsync();
+
+            return Results.Ok((cliente));
+        }).WithTags("Cliente").WithOpenApi();
     }
 }

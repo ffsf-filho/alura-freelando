@@ -27,5 +27,25 @@ public static class ProfissionalExtension
 
             return Results.Created($"/profissional/{profissional.Id}", profissional);
         }).WithTags("Profissional").WithOpenApi();
+
+        app.MapPut("/profissional/{id}", async ([FromServices] ProfissionalConverter converter, [FromServices] FreelandoContext contexto, Guid id, ProfissionalRequest profissionalRequest) =>
+        {
+            var profissional = await contexto.Profissionais.FindAsync(id);
+
+            if (profissional is null)
+            {
+                return Results.NotFound();
+            }
+
+            var profissionalAtualizado = converter.RequestToEntity(profissionalRequest);
+            profissional.Nome = profissionalAtualizado.Nome;
+            profissional.Cpf = profissionalAtualizado.Cpf;
+            profissional.Email = profissionalAtualizado.Email;
+            profissional.Telefone = profissionalAtualizado.Telefone;
+
+            await contexto.SaveChangesAsync();
+
+            return Results.Ok((profissional));
+        }).WithTags("Profissional").WithOpenApi();
     }
 }

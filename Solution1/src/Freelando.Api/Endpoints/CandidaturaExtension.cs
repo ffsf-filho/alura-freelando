@@ -1,6 +1,7 @@
 ﻿using Freelando.Api.Converters;
 using Freelando.Api.Requests;
 using Freelando.Dados;
+using Freelando.Modelo;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,26 @@ public static class CandidaturaExtension
             await contexto.SaveChangesAsync();
 
             return Results.Created($"/candidatura/{candidatura.Id}", candidatura);
+        }).WithTags("Candidatura").WithOpenApi();
+
+        app.MapPut("/candidatura/{id}", async ([FromServices] CandidaturaConverter converter, [FromServices] FreelandoContext contexto, Guid id, CandidaturaRequest candidaturaRequest) =>
+        {
+            var candidatura = await contexto.Candidaturas.FindAsync(id);
+
+            if(candidatura is null)
+            {
+                return Results.NotFound();
+            }
+
+            var candidaturaAtualizada = converter.RequestToEntity(candidaturaRequest);
+            candidatura.Status = candidaturaAtualizada.Status;
+            candidatura.ValorProposto = candidaturaAtualizada.ValorProposto;
+            candidatura.DescricaoProposta = candidaturaAtualizada.DescricaoProposta;
+            candidatura.DuracaoProposta = candidaturaAtualizada.DuracaoProposta;
+
+            await contexto.SaveChangesAsync();
+
+            return Results.Ok(candidatura);
         }).WithTags("Candidatura").WithOpenApi();
     }
 }
