@@ -43,19 +43,47 @@ public static class EspecialidadeExtension
             return Results.Ok(especialidade);
         }).WithTags("Especialidade").WithOpenApi();
 
+        //app.MapDelete("/especialidade/{id}", async ([FromServices] EspecialidadeConverter converter, FreelandoContext contexto, Guid id) =>
+        //{
+        //    var especialidade = await contexto.Especialidades.FindAsync(id);
+
+        //    if (especialidade is null)
+        //    {
+        //        return Results.NotFound();
+        //    }
+
+        //    contexto.Especialidades.Remove(especialidade);
+        //    await contexto.SaveChangesAsync();
+
+        //    return Results.NoContent();
+        //}).WithTags("Especialidade").WithOpenApi();
+
         app.MapDelete("/especialidade/{id}", async ([FromServices] EspecialidadeConverter converter, FreelandoContext contexto, Guid id) =>
         {
-            var especialidade = await contexto.Especialidades.FindAsync(id);
-
-            if (especialidade is null)
+            using(var transaction = contexto.Database.BeginTransaction())
             {
-                return Results.NotFound();
+                try
+                {
+                    var especialidade = await contexto.Especialidades.FindAsync(id);
+
+                    if (especialidade is null)
+                    {
+                        return Results.NotFound();
+                    }
+
+                    contexto.Especialidades.Remove(especialidade);
+                    await contexto.SaveChangesAsync();
+
+                    transaction.Commit();
+
+                    return Results.NoContent();
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw ex;
+                }
             }
-
-            contexto.Especialidades.Remove(especialidade);
-            await contexto.SaveChangesAsync();
-
-            return Results.NoContent();
         }).WithTags("Especialidade").WithOpenApi();
     }
 }
