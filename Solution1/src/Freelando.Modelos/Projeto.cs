@@ -9,6 +9,7 @@ public class Projeto
     public string? Descricao { get; set; }
     public StatusProjeto Status { get; set; }
     public Cliente? Cliente { get; set; }
+    public Vigencia Vigencia { get; set; }
     public ICollection<Especialidade> Especialidades { get; set; }
     public ICollection<ProjetoEspecialidade> ProjetosEspecialidades { get; } = [];
     public ICollection<Servico> Servicos { get; set; }

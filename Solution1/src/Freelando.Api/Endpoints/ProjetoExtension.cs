@@ -21,6 +21,12 @@ public static class ProjetoExtension
             return Results.Ok( await Task.FromResult(projetos));
         }).WithTags("Projeto").WithOpenApi();
 
+        app.MapGet("/projetos/vigencia", async ([FromServices] ProjetoConverter converter, FreelandoContext contexto) =>
+        {
+            var projetos = contexto.Projetos.ToList();
+            return Results.Ok(await Task.FromResult(projetos));
+        }).WithTags("Projeto").WithOpenApi();
+
         app.MapPost("/projeto", async ([FromServices] ProjetoConverter converter, FreelandoContext contexto, ProjetoRequest projetoRequest) =>
         {
             var projeto = converter.RequestToEntity(projetoRequest);

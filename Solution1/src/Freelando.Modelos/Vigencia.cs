@@ -1,8 +1,7 @@
-﻿namespace Freelando.Modelos
+﻿namespace Freelando.Modelos;
+
+public class Vigencia
 {
-    public class Vigencia
-    {
-        public DateTime DataInicio { get; set; }
-        public DateTime DataEncerramento { get; set; }
-    }
+    public DateTime? DataInicio { get; set; }
+    public DateTime? DataEncerramento { get; set; }
 }
