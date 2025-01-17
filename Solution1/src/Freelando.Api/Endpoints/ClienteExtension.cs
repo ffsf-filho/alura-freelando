@@ -53,6 +53,29 @@ public static class ClienteExtension
             return Results.Created($"/cliente/{cliente.Id}", cliente);
         }).WithTags("Cliente").WithOpenApi();
 
+        //app.MapPost("/clientes/new", async ([FromServices] ClienteConverter converter, [FromServices] FreelandoContext contexto, [FromServices] FreelandoClientesContext clientesContexto, ClienteRequest clienteRequest) =>
+        //{
+        //    TransactionManager.ImplicitDistributedTransactions = true;
+
+        //    using (var transactionScope = new TransactionScope(
+        //    TransactionScopeOption.Required,
+        //    new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }))
+        //    {
+        //        var cliente = converter.RequestToEntity(clienteRequest);
+        //        cliente.Id = Guid.NewGuid();
+        //        await contexto.Clientes.AddAsync(cliente);
+        //        contexto.SaveChanges();
+
+        //        var newCliente = new ClienteNew { Id = Guid.NewGuid(), Nome = cliente.Nome, Email = cliente.Email, DataInclusao = DateTime.Now };
+        //        await clientesContexto.ClienteNew.AddAsync(newCliente);
+        //        clientesContexto.SaveChanges();
+
+        //        transactionScope.Complete();
+        //        return Results.Created($"/clientes/{cliente.Id}", cliente);
+        //    }
+
+        //}).WithTags("Cliente").WithOpenApi();
+
         app.MapPut("/cliente/{id}", async ([FromServices] ClienteConverter converter, [FromServices] FreelandoContext contexto, Guid id, ClienteRequest clienteRequest) =>
         {
             var cliente = await contexto.Clientes.FindAsync(id);
