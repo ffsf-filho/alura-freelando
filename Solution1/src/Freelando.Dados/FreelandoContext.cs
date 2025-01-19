@@ -1,4 +1,5 @@
-﻿using Freelando.Modelo;
+﻿using Freelando.Dados.Interceptor;
+using Freelando.Modelo;
 using Freelando.Modelos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,8 @@ public class FreelandoContext(IConfiguration configuration, DbContextOptions<Fre
         {
             optionsBuilder.UseSqlServer(_configuration.GetConnectionString("ConnectionStrings:DefaultConnection"));
         }
+
+        optionsBuilder.AddInterceptors(new CommandInterceptor());
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,4 +35,5 @@ public class FreelandoContext(IConfiguration configuration, DbContextOptions<Fre
     public DbSet<Servico> Servicos { get; set; }
     public DbSet<ProjetoEspecialidade> ProjetosEspecialidades { get; set; }
     public DbSet<ProfissionalEspecialidade> ProfissionaisEspecialidades { get; set; }
+    public DbSet<Propostas> Propostas { get; set; }
 }
