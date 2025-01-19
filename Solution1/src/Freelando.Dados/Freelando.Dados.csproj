@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Freelando.Modelos\Freelando.Modelos.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="StoredProcedure\" />
+  </ItemGroup>
+
 </Project>

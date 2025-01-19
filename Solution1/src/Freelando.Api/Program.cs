@@ -64,6 +64,7 @@ app.AddEndPointContrato();
 app.AddEndPointProfissional();
 app.AddEndPointEspecialidades();
 app.AddEndPointProjeto();
+app.AddEndPointPropostas();
 app.AddEndPointRelatorios();
 app.AddEndPointServico();
 
