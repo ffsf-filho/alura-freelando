@@ -1,6 +1,6 @@
 ﻿using Freelando.Api.Converters;
 using Freelando.Api.Requests;
-using Freelando.Dados;
+using Freelando.Dados.UnitOfWork;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,27 +10,26 @@ public static class ProfissionalExtension
 {
     public static void AddEndPointProfissional(this WebApplication app)
     {
-        app.MapGet("/profissionais", async ([FromServices] ProfissionalConverter converter, [FromServices] FreelandoContext contexto) =>
+        app.MapGet("/profissionais", async ([FromServices] ProfissionalConverter converter, [FromServices] IUnitOfWork unitOfWork) =>
         {
-            var profissional = converter.EntityListToResponseList(
-                    [.. contexto.Profissionais.Include(e => e.Especialidades)]
-                );
-            var entries = contexto.ChangeTracker.Entries();
+            var profissional = converter.EntityListToResponseList(unitOfWork.contexto.Profissionais.Include(e => e.Especialidades).ToList());
+            var entries = unitOfWork.contexto.ChangeTracker.Entries();
+
             return Results.Ok(await Task.FromResult(profissional));
         }).WithTags("Profissional").WithOpenApi();
 
-        app.MapPost("/profissional", async ([FromServices] ProfissionalConverter converter, [FromServices] FreelandoContext contexto, ProfissionalRequest profissionalRequest) =>
+        app.MapPost("/profissional", async ([FromServices] ProfissionalConverter converter, [FromServices] IUnitOfWork unitOfWork, ProfissionalRequest profissionalRequest) =>
         {
             var profissional = converter.RequestToEntity(profissionalRequest);
-            await contexto.Profissionais.AddAsync(profissional);
-            await contexto.SaveChangesAsync();
+            await unitOfWork.ProfissionalRepository.Adicionar(profissional);
+            await unitOfWork.Commit();
 
             return Results.Created($"/profissional/{profissional.Id}", profissional);
         }).WithTags("Profissional").WithOpenApi();
 
-        app.MapPut("/profissional/{id}", async ([FromServices] ProfissionalConverter converter, [FromServices] FreelandoContext contexto, Guid id, ProfissionalRequest profissionalRequest) =>
+        app.MapPut("/profissional/{id}", async ([FromServices] ProfissionalConverter converter, [FromServices] IUnitOfWork unitOfWork, Guid id, ProfissionalRequest profissionalRequest) =>
         {
-            var profissional = await contexto.Profissionais.FindAsync(id);
+            var profissional = await unitOfWork.ProfissionalRepository.BuscarPorId(x => x.Id == id);
 
             if (profissional is null)
             {
@@ -43,22 +42,23 @@ public static class ProfissionalExtension
             profissional.Email = profissionalAtualizado.Email;
             profissional.Telefone = profissionalAtualizado.Telefone;
 
-            await contexto.SaveChangesAsync();
+            await unitOfWork.ProfissionalRepository.Atualizar(profissional);
+            await unitOfWork.Commit();
 
             return Results.Ok((profissional));
         }).WithTags("Profissional").WithOpenApi();
 
-        app.MapDelete("/profissional/{id}", async ([FromServices] ProfissionalConverter converter, [FromServices] FreelandoContext contexto, Guid id) =>
+        app.MapDelete("/profissional/{id}", async ([FromServices] ProfissionalConverter converter, [FromServices] IUnitOfWork unitOfWork, Guid id) =>
         {
-            var profissional = await contexto.Profissionais.FindAsync(id);
+            var profissional = await unitOfWork.ProfissionalRepository.BuscarPorId(x => x.Id == id);
 
             if (profissional is null)
             {
                 return Results.NotFound();
             }
 
-            contexto.Profissionais.Remove(profissional);
-            await contexto.SaveChangesAsync();
+            await unitOfWork.ProfissionalRepository.Deletar(profissional);
+            await unitOfWork.Commit();
 
             return Results.NoContent();
         }).WithTags("Profissional").WithOpenApi();

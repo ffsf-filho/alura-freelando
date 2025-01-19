@@ -1,6 +1,6 @@
 ﻿using Freelando.Api.Converters;
 using Freelando.Api.Requests;
-using Freelando.Dados;
+using Freelando.Dados.UnitOfWork;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,24 +10,24 @@ public static class ContratoExtension
 {
     public static void AddEndPointContrato(this WebApplication app)
     {
-        app.MapGet("/contratos", async ([FromServices] ContratoConverter converter, [FromServices] FreelandoContext contexto) =>
+        app.MapGet("/contratos", async ([FromServices] ContratoConverter converter, [FromServices] IUnitOfWork unitOfWork) =>
         {
-            var contrato = converter.EntityListToResponseList(contexto.Contratos.AsNoTracking().ToList());
-            var entries = contexto.ChangeTracker.Entries();
+            var contrato = converter.EntityListToResponseList(await unitOfWork.ContratoRepository.BuscarTodos());
+
             return Results.Ok(await Task.FromResult(contrato));
         }).WithTags("Contrato").WithOpenApi();
 
-        app.MapPost("/contrato", async ([FromServices] ContratoConverter converter, [FromServices] FreelandoContext contexto, ContratoRequest contratoRequest) =>
+        app.MapPost("/contrato", async ([FromServices] ContratoConverter converter, [FromServices] IUnitOfWork unitOfWork, ContratoRequest contratoRequest) =>
         {
-            using var transaction = await contexto.Database.BeginTransactionAsync();
+            using var transaction = await unitOfWork.contexto.Database.BeginTransactionAsync();
             try
             {
                 transaction.CreateSavepoint("Savepoint");
 
                 var contrato = converter.RequestToEntity(contratoRequest);
-                
-                await contexto.Contratos.AddAsync(contrato);
-                await contexto.SaveChangesAsync();
+
+                await unitOfWork.contexto.Contratos.AddAsync(contrato);
+                await unitOfWork.contexto.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 return Results.Created($"/contrato/{contrato.Id}", contrato);
@@ -44,9 +44,9 @@ public static class ContratoExtension
 
         }).WithTags("Contrato").WithOpenApi();
 
-        app.MapPut("/contrato/{id}", async ([FromServices] ContratoConverter converter, [FromServices] FreelandoContext contexto, Guid id, ContratoRequest contratoRequest) =>
+        app.MapPut("/contrato/{id}", async ([FromServices] ContratoConverter converter, [FromServices] IUnitOfWork unitOfWork, Guid id, ContratoRequest contratoRequest) =>
         {
-            var contrato = await contexto.Contratos.FindAsync(id);
+            var contrato = await unitOfWork.ContratoRepository.BuscarPorId(x => x.Id == id);
 
             if (contrato is null)
             {
@@ -57,22 +57,23 @@ public static class ContratoExtension
             contrato.Valor = contratoAtualizado.Valor;
             contrato.Vigencia = contratoAtualizado.Vigencia;
 
-            await contexto.SaveChangesAsync();
+            await unitOfWork.ContratoRepository.Atualizar(contrato);
+            await unitOfWork.Commit();
 
             return Results.Ok((contrato));
         }).WithTags("Contrato").WithOpenApi();
 
-        app.MapDelete("/contrato/{id}", async ([FromServices] ContratoConverter converter, [FromServices] FreelandoContext contexto, Guid id) =>
+        app.MapDelete("/contrato/{id}", async ([FromServices] ContratoConverter converter, [FromServices] IUnitOfWork unitOfWork, Guid id) =>
         {
-            var contrato = await contexto.Contratos.FindAsync(id);
+            var contrato = await unitOfWork.ContratoRepository.BuscarPorId(x => x.Id == id);
 
             if (contrato is null)
             {
                 return Results.NotFound();
             }
 
-            contexto.Contratos.Remove(contrato);
-            await contexto.SaveChangesAsync();
+            await unitOfWork.ContratoRepository.Deletar(contrato);
+            await unitOfWork.Commit();
 
             return Results.NoContent();
         }).WithTags("Contrato").WithOpenApi();

@@ -1,6 +1,6 @@
 ﻿using Freelando.Api.Converters;
 using Freelando.Api.Requests;
-using Freelando.Dados;
+using Freelando.Dados.UnitOfWork;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,35 +10,36 @@ public static class ProjetoExtension
 {
     public static void AddEndPointProjeto(this WebApplication app)
     {
-        app.MapGet("/projetos", async ([FromServices] ProjetoConverter converter, FreelandoContext contexto) =>
+        app.MapGet("/projetos", async ([FromServices] ProjetoConverter converter, IUnitOfWork unitOfWork) =>
         {
             var projetos = converter.EntityListToResponseList(
-                    contexto.Projetos
+                    unitOfWork.contexto.Projetos
                         .Include(p => p.Cliente)
                         .Include(p => p.Especialidades)
                         .ToList()
                 );
-            return Results.Ok( await Task.FromResult(projetos));
-        }).WithTags("Projeto").WithOpenApi();
-
-        app.MapGet("/projetos/vigencia", async ([FromServices] ProjetoConverter converter, FreelandoContext contexto) =>
-        {
-            var projetos = contexto.Projetos.ToList();
             return Results.Ok(await Task.FromResult(projetos));
         }).WithTags("Projeto").WithOpenApi();
 
-        app.MapPost("/projeto", async ([FromServices] ProjetoConverter converter, FreelandoContext contexto, ProjetoRequest projetoRequest) =>
+        app.MapGet("/projetos/vigencia", async ([FromServices] ProjetoConverter converter, IUnitOfWork unitOfWork) =>
+        {
+            var projetos = unitOfWork.ProjetoRepository.BuscarTodos();
+
+            return Results.Ok(await Task.FromResult(projetos));
+        }).WithTags("Projeto").WithOpenApi();
+
+        app.MapPost("/projeto", async ([FromServices] ProjetoConverter converter, IUnitOfWork unitOfWork, ProjetoRequest projetoRequest) =>
         {
             var projeto = converter.RequestToEntity(projetoRequest);
-            await contexto.Projetos.AddAsync(projeto);
-            await contexto.SaveChangesAsync();
+            await unitOfWork.ProjetoRepository.Adicionar(projeto);
+            await unitOfWork.Commit();
 
             return Results.Created($"/projeto/{projeto.Id}", projeto);
         }).WithTags("Projeto").WithOpenApi();
 
-        app.MapPut("/projeto/{id}", async ([FromServices] ProjetoConverter converter, [FromServices] FreelandoContext contexto, Guid id, ProjetoRequest projetoRequest) =>
+        app.MapPut("/projeto/{id}", async ([FromServices] ProjetoConverter converter, [FromServices] IUnitOfWork unitOfWork, Guid id, ProjetoRequest projetoRequest) =>
         {
-            var projeto = await contexto.Projetos.FindAsync(id);
+            var projeto = await unitOfWork.ProjetoRepository.BuscarPorId(x => x.Id == id);
 
             if (projeto is null)
             {
@@ -50,22 +51,23 @@ public static class ProjetoExtension
             projeto.Descricao = projetoAtualizado.Descricao;
             projeto.Status = projetoAtualizado.Status;
 
-            await contexto.SaveChangesAsync();
+            await unitOfWork.ProjetoRepository.Atualizar(projeto);
+            await unitOfWork.Commit();
 
             return Results.Ok((projeto));
         }).WithTags("Projeto").WithOpenApi();
 
-        app.MapDelete("/projeto/{id}", async ([FromServices] ProjetoConverter converter, [FromServices] FreelandoContext contexto, Guid id) =>
+        app.MapDelete("/projeto/{id}", async ([FromServices] ProjetoConverter converter, [FromServices] IUnitOfWork unitOfWork, Guid id) =>
         {
-            var projeto = await contexto.Projetos.FindAsync(id);
+            var projeto = await unitOfWork.ProjetoRepository.BuscarPorId(x => x.Id == id);
 
             if (projeto is null)
             {
                 return Results.NotFound();
             }
 
-            contexto.Projetos.Remove(projeto);
-            await contexto.SaveChangesAsync();
+            await unitOfWork.ProjetoRepository.Deletar(projeto);
+            await unitOfWork.Commit();
 
             return Results.NoContent();
         }).WithTags("Projeto").WithOpenApi();
