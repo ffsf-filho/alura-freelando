@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Transactions;
 
+
 namespace Freelando.Api.Endpoints;
 
 public static class ClienteExtension
@@ -50,6 +51,15 @@ public static class ClienteExtension
             return Results.Ok(await Task.FromResult(clientes));
         }).WithTags("Cliente").WithOpenApi();
 
+        app.MapGet("/clientes/parametro", async ([FromServices] ClienteConverter converter, [FromServices] IUnitOfWork unitOfWork, string parametro) =>
+        {
+            string comando = "SELECT * FROM TB_Clientes WHERE Nome ={0}";
+            
+            var clientes = unitOfWork.contexto.Clientes.FromSqlRaw(comando, parametro).ToList();
+
+            return Results.Ok(await Task.FromResult(clientes));
+        }).WithTags("Cliente").WithOpenApi();
+
         app.MapGet("/clientes/identificador-epecialidades", async ([FromServices] ClienteConverter converter, [FromServices] IUnitOfWork unitOfWork) =>
         {
             var clientes = unitOfWork.contexto.Clientes
@@ -73,6 +83,8 @@ public static class ClienteExtension
         app.MapPost("/cliente", async ([FromServices] ClienteConverter converter, [FromServices] IUnitOfWork unitOfWork, ClienteRequest clienteRequest, [FromServices] ICacheService cacheService ) =>
         {
             var cliente = converter.RequestToEntity(clienteRequest);
+            var hashData = BCrypt.Net.BCrypt.HashPassword(cliente.Cpf);//Não tem como reverter o valor
+            cliente.Cpf = hashData;
             await unitOfWork.ClienteRepository.Adicionar(cliente);
             await cacheService.RemoveCachedDataAsync(chaveCahe);
             await unitOfWork.Commit();
