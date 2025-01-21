@@ -1,9 +1,12 @@
 ﻿using Freelando.Api.Converters;
 using Freelando.Api.Requests;
+using Freelando.Api.Responses;
+using Freelando.Api.Services;
 using Freelando.Dados;
 using Freelando.Dados.UnitOfWork;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Transactions;
 
 namespace Freelando.Api.Endpoints;
@@ -12,9 +15,31 @@ public static class ClienteExtension
 {
     public static void AddEndPointClientes(this WebApplication app)
     {
-        app.MapGet("/clientes", async ([FromServices] ClienteConverter converter, [FromServices] IUnitOfWork unitOfWork) =>
+        const string chaveCahe = "clientes";
+
+        app.MapGet("/clientes", async ([FromServices] ClienteConverter converter, [FromServices] IUnitOfWork unitOfWork, IMemoryCache cache) =>
         {
+            if(!cache.TryGetValue(chaveCahe, out ICollection<ClienteResponse> clientesCache))
+            {
+                clientesCache = converter.EntityListToResponseList(await unitOfWork.ClienteRepository.BuscarTodos());
+                cache.Set(chaveCahe, clientesCache, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(5)));
+            }
+
+            return Results.Ok(await Task.FromResult(clientesCache));
+        }).WithTags("Cliente").WithOpenApi();
+
+        app.MapGet("/clientes/redis", async ([FromServices] ClienteConverter converter, [FromServices] IUnitOfWork unitOfWork, [FromServices] ICacheService cacheService) =>
+        {
+            var clientesCache = await cacheService.GetCachedDataAsync<IEnumerable<ClienteResponse>>(chaveCahe);
+
+            if (clientesCache is not null)
+            {
+                return Results.Ok(clientesCache);
+            }
+
             var clientes = converter.EntityListToResponseList(await unitOfWork.ClienteRepository.BuscarTodos());
+            await cacheService.SetCachedDataAsync(chaveCahe, clientes, TimeSpan.FromMinutes(5));
+
             return Results.Ok(await Task.FromResult(clientes));
         }).WithTags("Cliente").WithOpenApi();
 
@@ -45,10 +70,11 @@ public static class ClienteExtension
             return Results.Ok(await Task.FromResult(clientes));
         }).WithTags("Cliente").WithOpenApi();
 
-        app.MapPost("/cliente", async ([FromServices] ClienteConverter converter, [FromServices] IUnitOfWork unitOfWork, ClienteRequest clienteRequest) =>
+        app.MapPost("/cliente", async ([FromServices] ClienteConverter converter, [FromServices] IUnitOfWork unitOfWork, ClienteRequest clienteRequest, [FromServices] ICacheService cacheService ) =>
         {
             var cliente = converter.RequestToEntity(clienteRequest);
             await unitOfWork.ClienteRepository.Adicionar(cliente);
+            await cacheService.RemoveCachedDataAsync(chaveCahe);
             await unitOfWork.Commit();
 
             return Results.Created($"/cliente/{cliente.Id}", cliente);
